@@ -9,8 +9,8 @@ export interface AIResponse {
 }
 
 export class AIService {
-  private static async makeRequest(prompt: string): Promise<AIResponse> {
-    console.log(prompt);
+  static async makeRequest(prompt: string): Promise<AIResponse> {
+    console.log('AI Prompt:', prompt);
     // TODO: Implement actual AI API call
     // This is a mock implementation
 
@@ -18,11 +18,36 @@ export class AIService {
       setTimeout(() => {
         resolve({
           suggestions: [
-            "Consider adding more quantifiable achievements",
-            "Include relevant keywords from the job description",
-            "Add specific technologies and tools used"
+            "Add more quantifiable achievements to highlight your impact",
+            "Include relevant keywords from the job descriptions",
+            "Consider adding a brief personal projects section"
           ],
-          improvedContent: "Improved content will be generated here"
+          improvedContent: `# Professional Resume
+
+## Summary
+Experienced software developer with a strong background in full-stack development and a passion for creating efficient, scalable solutions.
+
+## Professional Experience
+- **Senior Software Developer** | Tech Corp (2020-2023)
+  - Led development of mission-critical applications
+  - Mentored junior developers and improved team productivity by 30%
+  - Implemented CI/CD pipelines reducing deployment time by 50%
+
+## Education
+- **Bachelor of Science in Computer Science**
+  - University of Technology (2016-2020)
+  - GPA: 3.8/4.0
+
+## Skills
+- **Languages**: JavaScript, TypeScript, Python, Java
+- **Frameworks**: React, Node.js, Express, Next.js
+- **Tools**: Git, Docker, AWS, Azure
+
+## Projects
+- **E-commerce Platform**
+  - Built a scalable platform serving 10k+ daily users
+  - Implemented real-time inventory management
+  - Reduced load times by 40% through optimization`
         });
       }, 1000);
     });

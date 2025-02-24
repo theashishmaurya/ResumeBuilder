@@ -5,6 +5,10 @@ import html2pdf from 'html2pdf.js';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import { Button } from './ui/button';
+import { MessageCircle, X } from 'lucide-react';
+import { ResumeChat } from './ResumeChat';
+import { useResume } from '@/context/ResumeContext';
 
 import { ResumeStyleSidebar } from './ResumeStyleSidebar';
 import type { Components } from 'react-markdown';
@@ -43,7 +47,8 @@ const defaultStyles: ResumeStyles = {
   themeColor: "#000000"
 };
 
-const defaultTemplate = `# Bruce Wayne
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const defaultTemplate = `# Bruce Wayne
 
 |  |  |  |
 |---------|---------|---------|
@@ -167,9 +172,12 @@ const MarkdownComponents: Components = {
 };
 
 export function ResumeEditor() {
-  const [markdown, setMarkdown] = useState(defaultTemplate);
+  const { markdown, setMarkdown } = useResume();
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [styles, setStyles] = useState<ResumeStyles>(defaultStyles);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setMarkdown(e.target.value);
@@ -201,37 +209,32 @@ export function ResumeEditor() {
   };
 
   return (
-    <div className="flex h-full border-2">
-      <ResumeStyleSidebar 
-        styles={styles}
-        onStyleChange={updateStyle}
-        onExportPDF={handleExportPDF}
-      />
+    <div className="flex h-full border rounded-lg overflow-hidden relative">
+      {!isChatOpen && (
+        <ResumeStyleSidebar 
+          styles={styles}
+          onStyleChange={updateStyle}
+          onExportPDF={handleExportPDF}
+        />
+      )}
 
       {/* Main Content */}
-      <div className="flex-1 flex border-2">
+      <div className="flex-1 flex">
         {/* Editor Section */}
         <div className="w-1/2 p-4 border-r">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">Markdown Editor</h2>
-          </div>
           <textarea
             value={markdown}
-            onChange={handleChange}
-            className="h-[calc(100vh-8rem)] w-full resize-none rounded-md border p-4 font-mono bg-white"
+            onChange={(e) => handleChange(e)}
+            className="h-full w-full bg-white resize-none rounded-md border p-4 font-mono"
             placeholder="Enter your Markdown here..."
           />
         </div>
         
         {/* Preview Section */}
-        <div className="w-1/2 p-4 bg-gray-100">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">Preview</h2>
-          </div>
-          <div className="overflow-auto h-[calc(100vh-8rem)]">
+        <div className="bg-gray-50 w-1/2 overflow-x-auto">
             <div 
               ref={previewRef}
-              className="bg-white"
+              className="bg-white rounded-lg shadow-sm origin-top"
               style={{
                 width: '210mm',
                 minHeight: '297mm',
@@ -239,10 +242,11 @@ export function ResumeEditor() {
                 fontFamily: styles.fontFamily.english,
                 fontSize: `${styles.fontSize}px`,
                 lineHeight: styles.lineSpacing,
+                transform: `scale(${0.7})`,
               }}
             >
               <div 
-                className="prose prose-sm max-w-none [&_h1]:text-[color:var(--theme-color)] [&_h2]:text-[color:var(--theme-color)] [&_h3]:text-[color:var(--theme-color)]"
+                className="prose prose-sm max-w-none"
                 style={{
                   fontSize: `${styles.fontSize}px`,
                   lineHeight: styles.lineSpacing,
@@ -260,8 +264,40 @@ export function ResumeEditor() {
               </div>
             </div>
           </div>
-        </div>
       </div>
+
+      {/* Chat Overlay */}
+      {isChatOpen && (
+        <div className="absolute right-0 top-0 h-full w-80 bg-white border-l shadow-lg">
+          <div className="h-full flex flex-col">
+            <div className="p-2 border-b flex justify-between items-center">
+              <h3 className="font-semibold">AI Assistant</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsChatOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <ResumeChat 
+                onResumeUpdate={setMarkdown}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chat Toggle Button */}
+      {!isChatOpen && (
+        <Button
+          className="absolute bottom-4 right-4 rounded-full w-12 h-12 p-0"
+          onClick={() => setIsChatOpen(true)}
+        >
+          <MessageCircle className="h-6 w-6" />
+        </Button>
+      )}
     </div>
   );
 } 
