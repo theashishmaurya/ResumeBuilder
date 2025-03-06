@@ -1,3 +1,6 @@
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
 export interface ResumeSection {
   id: string;
   content: string;
@@ -11,46 +14,63 @@ export interface AIResponse {
 export class AIService {
   static async makeRequest(prompt: string): Promise<AIResponse> {
     console.log('AI Prompt:', prompt);
-    // TODO: Implement actual AI API call
-    // This is a mock implementation
+    
+    // Check if API key is available
+    if (!process.env.NEXT_PUBLIC_OPENAI_API_KEY) {
+      console.error('OpenAI API key is missing. Please check your environment variables.');
+      throw new Error('OpenAI API key is missing');
+    }
+    
+    try {
+      // Using AI SDK's generateText function with the openai provider
+      const result = await generateText({
+        model: openai('gpt-4o'),
+        prompt: prompt,
+        temperature: 0.7,
+        maxTokens: 2000,
+      });
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          suggestions: [
-            "Add more quantifiable achievements to highlight your impact",
-            "Include relevant keywords from the job descriptions",
-            "Consider adding a brief personal projects section"
-          ],
-          improvedContent: `# Professional Resume
-
-## Summary
-Experienced software developer with a strong background in full-stack development and a passion for creating efficient, scalable solutions.
-
-## Professional Experience
-- **Senior Software Developer** | Tech Corp (2020-2023)
-  - Led development of mission-critical applications
-  - Mentored junior developers and improved team productivity by 30%
-  - Implemented CI/CD pipelines reducing deployment time by 50%
-
-## Education
-- **Bachelor of Science in Computer Science**
-  - University of Technology (2016-2020)
-  - GPA: 3.8/4.0
-
-## Skills
-- **Languages**: JavaScript, TypeScript, Python, Java
-- **Frameworks**: React, Node.js, Express, Next.js
-- **Tools**: Git, Docker, AWS, Azure
-
-## Projects
-- **E-commerce Platform**
-  - Built a scalable platform serving 10k+ daily users
-  - Implemented real-time inventory management
-  - Reduced load times by 40% through optimization`
-        });
-      }, 1000);
-    });
+      const content = result.text;
+      
+      // Extract suggestions from the content
+      const suggestions: string[] = [];
+      const suggestionRegex = /suggestion[s]?:|\*\*suggestion[s]?:|\*\*improvement[s]?:|\*\*recommendation[s]?:/i;
+      
+      if (suggestionRegex.test(content)) {
+        const parts = content.split(suggestionRegex);
+        if (parts.length > 1) {
+          const suggestionText = parts[1].trim();
+          const suggestionItems = suggestionText.split(/\n-|\n\*|\n\d+\./);
+          
+          for (const item of suggestionItems) {
+            const trimmed = item.trim();
+            if (trimmed && !trimmed.startsWith('#') && trimmed.length > 10) {
+              suggestions.push(trimmed);
+            }
+          }
+        }
+      }
+      
+      return {
+        suggestions: suggestions.length > 0 ? suggestions : [],
+        improvedContent: content
+      };
+    } catch (error) {
+      console.error('Error calling AI SDK:', error);
+      
+      // Check if the error is related to the API key
+      if (error instanceof Error && error.message.includes('API key')) {
+        throw new Error('OpenAI API key is missing or invalid');
+      }
+      
+      // Fallback to ensure the application doesn't break
+      return {
+        suggestions: [
+          "Error connecting to AI service. Please try again later.",
+        ],
+        improvedContent: "I apologize, but I'm having trouble connecting to the AI service right now. Please try again later."
+      };
+    }
   }
 
   static async improveSection(section: ResumeSection): Promise<AIResponse> {
